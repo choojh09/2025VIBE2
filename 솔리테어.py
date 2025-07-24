@@ -2,7 +2,7 @@ import streamlit as st
 import random
 
 st.set_page_config(page_title="Streamlit 솔리테어", layout="wide")
-st.title("🃏 Streamlit 솔리테어 (룰 + 이동 + 색 규칙 포함)")
+st.title("🃏 Streamlit 솔리테어 (룰 + 이동 + 색 규칙 + 파운데이션 포함)")
 
 st.markdown("""
 텍스트 기반 솔리테어입니다. 
@@ -121,8 +121,28 @@ if st.session_state.open_card:
                 st.success(f"{card} → 빈 열 {move_target} 이동 완료")
             else:
                 st.warning("빈 열에는 K만 이동 가능합니다.")
+    st.markdown("---")
+    st.subheader("📥 오픈 카드 파운데이션 이동")
+    if st.button("⬆️ 오픈 카드 → 파운데이션"):
+        card = st.session_state.open_card[-1]
+        suit, rank = card[0], card[1:]
+        foundation = st.session_state.foundation[suit]
+        expected_rank = ranks[len(foundation)] if len(foundation) < 13 else None
+        if rank == expected_rank:
+            foundation.append(card)
+            st.session_state.open_card.pop()
+            st.success(f"{card} → 파운데이션 이동 완료")
+        else:
+            st.warning(f"파운데이션에는 {suit}{expected_rank}가 필요합니다.")
 else:
     st.markdown("열린 카드 없음")
+
+# 파운데이션 표시
+st.markdown("---")
+st.subheader("🏛️ 파운데이션")
+for suit in suits:
+    cards = " → ".join(st.session_state.foundation[suit]) or "(비어있음)"
+    st.markdown(f"{suit}: {cards}")
 
 st.markdown(f"남은 더미 카드 수: {len(st.session_state.deck)}")
 st.markdown(f"버린 카드 수: {len(st.session_state.discard_pile)}")
