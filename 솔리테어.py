@@ -26,20 +26,11 @@ if "columns" not in st.session_state:
         pile = deck_full[i*7:(i+1)*7]
         hidden = pile[:-1]
         visible = [pile[-1]] if pile else []
-        st.session_state.columns.append({"hidden": hidden, "visible": visible})
+        st.session_state.columns.append({"hidden": hidden, "visible": visible, "foundation": []})
     st.session_state.foundation = {suit: [] for suit in suits}
     st.session_state.deck = deck_full[28:]
     st.session_state.open_card = []
     st.session_state.discard_pile = []
-
-# 더미에서 카드 열기
-if st.button("🔄 더미에서 카드 열기"):
-    if st.session_state.deck:
-        card = st.session_state.deck.pop(0)
-        st.session_state.open_card = [card]
-        st.session_state.discard_pile.append(card)
-    else:
-        st.warning("더미에 남은 카드가 없습니다.")
 
 # 테이블 출력 (줄 정렬 개선)
 st.markdown("---")
@@ -59,6 +50,31 @@ for i in range(max_height):
     table_rows.append("   ".join(row))
 
 st.text("\n".join(table_rows))
+
+# 더미와 오픈 카드 표시 + 버튼 같이 출력
+st.markdown("---")
+st.subheader("🎴 더미와 오픈 카드")
+col1, col2 = st.columns([1, 4])
+with col1:
+    if st.button("🔄 더미에서 카드 열기"):
+        if st.session_state.deck:
+            card = st.session_state.deck.pop(0)
+            st.session_state.open_card = [card]
+            st.session_state.discard_pile.append(card)
+        else:
+            # 더미 초기화
+            st.session_state.deck = st.session_state.discard_pile
+            st.session_state.discard_pile = []
+            st.session_state.open_card = []
+            random.shuffle(st.session_state.deck)
+            st.info("더미가 초기화되었습니다.")
+
+with col2:
+    if st.session_state.open_card:
+        open_card = st.session_state.open_card[-1]
+        st.markdown(f"열린 카드: [{open_card}]")
+    else:
+        st.markdown("열린 카드 없음")
 
 # 열 간 카드 이동 기능 추가
 st.markdown("---")
@@ -94,14 +110,12 @@ if st.button("👉 카드 이동"):
     else:
         st.warning("출발 열에 이동할 카드가 없습니다.")
 
-# 오픈 카드와 열 이동 기능
-st.markdown("---")
-st.subheader("🎴 더미와 오픈 카드")
+# 오픈 카드 열 또는 파운데이션 이동
 if st.session_state.open_card:
-    open_card = st.session_state.open_card[-1]
-    st.markdown(f"열린 카드: [{open_card}]")
+    st.markdown("---")
+    st.subheader("📤 오픈 카드 이동")
     move_target = st.selectbox("오픈 카드를 이동할 열:", [1, 2, 3, 4], key="dummy_target")
-    if st.button("📤 오픈 카드 열로 이동"):
+    if st.button("📥 오픈 카드 → 열 이동"):
         card = st.session_state.open_card[-1]
         suit, rank = card[0], card[1:]
         target = st.session_state.columns[move_target - 1]
@@ -121,9 +135,10 @@ if st.session_state.open_card:
                 st.success(f"{card} → 빈 열 {move_target} 이동 완료")
             else:
                 st.warning("빈 열에는 K만 이동 가능합니다.")
-    st.markdown("---")
-    st.subheader("📥 오픈 카드 파운데이션 이동")
-    if st.button("⬆️ 오픈 카드 → 파운데이션"):
+
+    # 파운데이션 이동
+    st.subheader("⬆️ 오픈 카드 → 파운데이션")
+    if st.button("📤 오픈 카드 파운데이션으로 이동"):
         card = st.session_state.open_card[-1]
         suit, rank = card[0], card[1:]
         foundation = st.session_state.foundation[suit]
@@ -134,15 +149,12 @@ if st.session_state.open_card:
             st.success(f"{card} → 파운데이션 이동 완료")
         else:
             st.warning(f"파운데이션에는 {suit}{expected_rank}가 필요합니다.")
-else:
-    st.markdown("열린 카드 없음")
 
-# 파운데이션 표시
+# 파운데이션 출력
 st.markdown("---")
 st.subheader("🏛️ 파운데이션")
-for suit in suits:
-    cards = " → ".join(st.session_state.foundation[suit]) or "(비어있음)"
-    st.markdown(f"{suit}: {cards}")
+foundation_display = "  ".join([f"{suit}: {','.join(st.session_state.foundation[suit]) or '_'}" for suit in suits])
+st.markdown(f"`{foundation_display}`")
 
 st.markdown(f"남은 더미 카드 수: {len(st.session_state.deck)}")
 st.markdown(f"버린 카드 수: {len(st.session_state.discard_pile)}")
