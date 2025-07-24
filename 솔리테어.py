@@ -94,8 +94,11 @@ if st.button("👉 카드 이동"):
                 target["visible"].append(card)
                 source["visible"].pop()
                 if not source["visible"] and source["hidden"]:
-                    source["visible"].append(source["hidden"].pop())
-                st.success(f"{card} → 열 {to_col} 이동 완료")
+                    flipped = source["hidden"].pop()
+                    source["visible"].append(flipped)
+                    st.success(f"{card} → 열 {to_col} 이동 완료, 카드 [{flipped}]가 공개되었습니다.")
+                else:
+                    st.success(f"{card} → 열 {to_col} 이동 완료")
             else:
                 st.warning("색이 교차하고 숫자가 1 작아야 합니다.")
         else:
@@ -103,8 +106,11 @@ if st.button("👉 카드 이동"):
                 target["visible"].append(card)
                 source["visible"].pop()
                 if not source["visible"] and source["hidden"]:
-                    source["visible"].append(source["hidden"].pop())
-                st.success(f"{card} → 빈 열 {to_col} 이동 완료")
+                    flipped = source["hidden"].pop()
+                    source["visible"].append(flipped)
+                    st.success(f"{card} → 빈 열 {to_col} 이동 완료, 카드 [{flipped}]가 공개되었습니다.")
+                else:
+                    st.success(f"{card} → 빈 열 {to_col} 이동 완료")
             else:
                 st.warning("빈 열에는 K만 이동 가능합니다.")
     else:
