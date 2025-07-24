@@ -1,5 +1,6 @@
 import streamlit as st
 import random
+import matplotlib.pyplot as plt
 
 st.set_page_config(page_title="가위바위보 게임", layout="centered")
 st.title("✊ ✋ ✌ 🦎 🖖 가위바위보도마뱀스포크 게임")
@@ -57,5 +58,16 @@ if st.button("결과 보기"):
 
     st.markdown("---")
     st.markdown(f"**총 게임 수:** {st.session_state.total}")
-    st.markdown(f"✅ 승리: {st.session_state.wins}  \n❌ 패배: {st.session_state.losses}  \n➖ 무승부: {st.session_state.draws}")
+    st.markdown(f"✅ 승리: {st.session_state.wins}  ")
+    st.markdown(f"❌ 패배: {st.session_state.losses}  ")
+    st.markdown(f"➖ 무승부: {st.session_state.draws}")
 
+    # 대전 기록 시각화
+    fig, ax = plt.subplots()
+    labels = ['승리', '패배', '무승부']
+    counts = [st.session_state.wins, st.session_state.losses, st.session_state.draws]
+    colors = ['green', 'red', 'gray']
+    ax.bar(labels, counts, color=colors)
+    ax.set_ylabel("횟수")
+    ax.set_title("대전 기록 통계")
+    st.pyplot(fig)
