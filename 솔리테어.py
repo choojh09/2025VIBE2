@@ -2,18 +2,20 @@ import streamlit as st
 import random
 
 st.set_page_config(page_title="Streamlit 솔리테어", layout="wide")
-st.title("🃏 Streamlit 솔리테어 (룰 + 이동 + 더미 구현)")
+st.title("🃏 Streamlit 솔리테어 (룰 + 이동 + 색 규칙 포함)")
 
 st.markdown("""
 텍스트 기반 솔리테어입니다. 
 - 각 열에서 마지막 공개된 카드만 다른 열로 옮길 수 있습니다.
 - 파운데이션에는 같은 무늬로 A부터 K까지 순서대로 쌓아야 합니다.
-- 카드는 `---카드---` 형식으로 표시되며, 뒤집힌 카드는 `###`로 표시됩니다.
+- 카드 이동 시 색이 교차해야 하며, 이동되는 카드는 현재 카드보다 숫자가 1 작아야 합니다.
 - 더미(Deck)에서 새로운 카드를 열 수 있습니다.
 """)
 
 suits = ["♠", "♥", "♦", "♣"]
 ranks = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"]
+rank_value = {rank: i+1 for i, rank in enumerate(ranks)}
+suit_color = {"♠": "black", "♣": "black", "♥": "red", "♦": "red"}
 deck_full = [f"{suit}{rank}" for suit in suits for rank in ranks]
 
 # 상태 초기화
@@ -36,6 +38,32 @@ if st.button("🔄 더미에서 카드 열기"):
     else:
         st.warning("더미에 남은 카드가 없습니다.")
 
+# 오픈카드를 열로 이동
+st.markdown("---")
+st.subheader("🎯 오픈 카드 열로 이동")
+target_column = st.selectbox("오픈 카드를 이동할 열 (1~4):", [1, 2, 3, 4], key="open_move")
+if st.button("⬇️ 오픈 카드 이동"):
+    if st.session_state.open_card:
+        card = st.session_state.open_card.pop()
+        suit, rank = card[0], card[1:]
+        target = st.session_state.columns[target_column - 1]
+        if target["visible"]:
+            top_card = target["visible"][-1]
+            top_suit, top_rank = top_card[0], top_card[1:]
+            if suit_color[suit] != suit_color[top_suit] and rank_value[rank] == rank_value[top_rank] - 1:
+                target["visible"].append(card)
+                st.success(f"오픈 카드 {card} → 열 {target_column} 이동 완료")
+            else:
+                st.warning("색이 교차하고 숫자가 1 작아야 이동할 수 있습니다.")
+        else:
+            if rank == "K":
+                target["visible"].append(card)
+                st.success(f"빈 열로 {card} 이동 완료")
+            else:
+                st.warning("빈 열에는 K만 이동 가능합니다.")
+    else:
+        st.warning("오픈된 카드가 없습니다.")
+
 # 카드 옮기기: 열에서 열로
 st.markdown("---")
 st.subheader("⬇️ 카드 옮기기")
@@ -45,11 +73,28 @@ if st.button("👉 열에서 열로 이동"):
     source = st.session_state.columns[from_col - 1]
     target = st.session_state.columns[to_col - 1]
     if source["visible"]:
-        card = source["visible"].pop()
-        target["visible"].append(card)
-        if not source["visible"] and source["hidden"]:
-            source["visible"].append(source["hidden"].pop())
-        st.success(f"{card} 이동 완료")
+        card = source["visible"][-1]
+        suit, rank = card[0], card[1:]
+        if target["visible"]:
+            top_card = target["visible"][-1]
+            top_suit, top_rank = top_card[0], top_card[1:]
+            if suit_color[suit] != suit_color[top_suit] and rank_value[rank] == rank_value[top_rank] - 1:
+                source["visible"].pop()
+                target["visible"].append(card)
+                if not source["visible"] and source["hidden"]:
+                    source["visible"].append(source["hidden"].pop())
+                st.success(f"{card} → 열 {to_col} 이동 완료")
+            else:
+                st.warning("색이 교차하고 숫자가 1 작아야 이동할 수 있습니다.")
+        else:
+            if rank == "K":
+                source["visible"].pop()
+                target["visible"].append(card)
+                if not source["visible"] and source["hidden"]:
+                    source["visible"].append(source["hidden"].pop())
+                st.success(f"{card} → 빈 열 {to_col} 이동 완료")
+            else:
+                st.warning("빈 열에는 K만 이동 가능합니다.")
     else:
         st.warning("출발 열에 이동 가능한 카드가 없습니다.")
 
