@@ -149,13 +149,15 @@ max_height = max(len(p["hidden"] + p["visible"]) for p in st.session_state.colum
 for row in range(max_height):
     line = []
     for pile in st.session_state.columns:
-        full = pile["hidden"] + pile["visible"]
-        if row < len(pile["hidden"]):
-            line.append("###")
-        elif row < len(full):
-            line.append(f"---{full[row]}---")
+        h = pile["hidden"]
+        v = pile["visible"]
+        if row < len(h):
+            line.append("   ###   ")
+        elif row < len(h) + len(v):
+            idx = row - len(h)
+            line.append(f"--{v[idx]}--")
         else:
-            line.append("       ")
+            line.append("         ")
     table_display.append(" ".join(line))
 
 st.text("\n".join(table_display))
@@ -173,6 +175,28 @@ st.markdown("---")
 st.subheader("🎴 더미와 오픈 카드")
 if st.session_state.open_card:
     st.markdown(f"열린 카드: ---{st.session_state.open_card[-1]}---")
+    # 열로 이동할 수 있는 선택 인터페이스
+    dummy_target = st.selectbox("오픈 카드 이동 (더미에서 열림):", [1, 2, 3, 4], key="dummy")
+    if st.button("📤 오픈 카드 열로 이동 (더미)"):
+        card = st.session_state.open_card[-1]
+        suit, rank = card[0], card[1:]
+        target = st.session_state.columns[dummy_target - 1]
+        if target["visible"]:
+            top_card = target["visible"][-1]
+            top_suit, top_rank = top_card[0], top_card[1:]
+            if suit_color[suit] != suit_color[top_suit] and rank_value[rank] == rank_value[top_rank] - 1:
+                target["visible"].append(card)
+                st.session_state.open_card.pop()
+                st.success(f"오픈 카드 {card} → 열 {dummy_target} 이동 완료")
+            else:
+                st.warning("색이 교차하고 숫자가 1 작아야 이동할 수 있습니다.")
+        else:
+            if rank == "K":
+                target["visible"].append(card)
+                st.session_state.open_card.pop()
+                st.success(f"빈 열로 {card} 이동 완료")
+            else:
+                st.warning("빈 열에는 K만 이동 가능합니다.")
 else:
     st.markdown("열린 카드 없음")
 st.markdown(f"남은 더미 카드 수: {len(st.session_state.deck)}")
